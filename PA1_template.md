@@ -6,14 +6,16 @@ output: html_document
 ## Libraries
 Libraries used for grouping and handling dates where those earlier introduced in the
 datascience spezialisaton.  
-```{r, warning=FALSE, message=FALSE, eval=TRUE}
+
+```r
 library(rmarkdown)
 library(dplyr)
 library(ggplot2)
 ```
 ## Getting the data
 Data were loaded as described in the assignment.  
-```{r,eval=TRUE}
+
+```r
 setInternet2(use = TRUE)
 download.file(url="https://d396qusza40orc.cloudfront.net/repdata/data/activity.zip", destfile = "data.zip")
 # get the name of the first file in the zip archive
@@ -24,60 +26,67 @@ data <- read.csv(file=fname)
 ```
 ## What is mean total number of steps taken per day?
 Grouping the data by date:
-```{r,eval=TRUE}
+
+```r
 by_date <- group_by(data,date)
 by_date <- summarise(by_date,steps_per_day = sum(steps))
 hist(by_date$steps_per_day, breaks = 10, xlab = "Number of steps", main = "Number of steps per day")
+```
+
+![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-3-1.png) 
+
+```r
 mean_steps <- as.integer(mean(by_date$steps_per_day, na.rm = TRUE))
 median_steps <- median(by_date$steps_per_day, na.rm = TRUE)
 ```
 
-#### The mean number of steps per day is `r mean_steps`
+#### The mean number of steps per day is 10766
 Note that the mean has been casted to an integer
 
-#### Median number of steps per day `r median_steps`
+#### Median number of steps per day 10765
 
 
 ## What is the average daily activity pattern?
 Grouping the data by interval
-```{r,eval=TRUE}
+
+```r
 by_interval <- group_by(data,interval)
 by_interval <- summarise(by_interval,steps_per_interval = mean(steps, na.rm = TRUE))
 by_interval$time <- formatC(by_interval$interval,width=4,flag=0)
 by_interval$time <- strptime(by_interval$time,format="%H%M")
 plot(by_interval$time,by_interval$steps_per_interval, type = "l", ylab="steps per 5 min interval", xlab ="Time of day", main="average steps per 5 min interval")
+```
+
+![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-4-1.png) 
+
+```r
 max_steps <- as.integer(max(by_interval$steps_per_interval , na.rm = TRUE))
 max_interval <- which.max(by_interval$steps_per_interval)
 max_time<-format(by_interval$time[max_interval],format="%H:%M")
 ```
 
-#### The maximum number of steps occur in the 5 minute period preceeding `r max_time`
+#### The maximum number of steps occur in the 5 minute period preceeding 08:35
 
 ## Imputing missing values
 The presence of missing values is easyly recognized from the data of the first data. 
-Since a day consists of 24*12 time intervals of five minutes, data from `r sum(is.na(data$steps))/(24*12)` days is missing.  
+Since a day consists of 24*12 time intervals of five minutes, data from 8 days is missing.  
 Missing values were replaced by the mean for that specific interval.  This value has already been calculated for the average daily activity.  
-```{r eval=TRUE, echo=FALSE}
-m <-left_join(x=data,y=by_interval)
-index <- is.na(data$steps)
-data$steps[index]  <- m$steps_per_interval[index] 
-remove(m)
 
-by_date2 <- group_by(data,date)
-by_date2 <- summarise(by_date2,steps_per_day = sum(steps))
-hist(by_date2$steps_per_day, breaks = 10, xlab = "Number of steps", main = "Number of steps per day")
-mean_steps2 <- as.integer(mean(by_date2$steps_per_day, na.rm = TRUE))
-median_steps2 <- as.integer(median(by_date2$steps_per_day, na.rm = TRUE))
+```
+## Joining by: "interval"
 ```
 
-#### The question to answer were
-- the mean value of the total number of steps taken each day based on the imputed data is **`r mean_steps2`**.  This is a difference of `r mean_steps2-mean_steps` to the mean value of the not imputed data.
-- the median value of the total number of steps taken each day based on the imputed data is **`r median_steps2`**.  This is a difference of `r median_steps2-median_steps` to the mean value of the not imputed data.
+![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-5-1.png) 
 
-** `r as.integer(100*sum(index)/nrow(data))`% of the data is missing, and the effect is very small. This result is expected as the missingvalues has been replaced with the mean values for the intervals.** 
+#### The question to answer were
+- the mean value of the total number of steps taken each day based on the imputed data is **10766**.  This is a difference of 0 to the mean value of the not imputed data.
+- the median value of the total number of steps taken each day based on the imputed data is **10766**.  This is a difference of 1 to the mean value of the not imputed data.
+
+** 13% of the data is missing, and the effect is very small. This result is expected as the missingvalues has been replaced with the mean values for the intervals.** 
 
 ## Are there differences in activity patterns between weekdays and weekends?
-```{r}
+
+```r
 m <- weekdays(strptime(data$date,format="%Y-%m-%d"))
 m <- (m == "Sonntag" | m == "Samstag")
 data$daytyp <- factor(m,labels = c("weekday","weekend"))
@@ -85,6 +94,8 @@ by_interval <- group_by(data,interval,daytyp)
 by_interval <- summarise(by_interval,steps_per_interval = mean(steps, na.rm = TRUE))
 qplot(interval, steps_per_interval, data = by_interval, facets = daytyp~., geom = "line")
 ```
+
+![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-6-1.png) 
 
 
 #### Comparing activities on weekend and working days####
